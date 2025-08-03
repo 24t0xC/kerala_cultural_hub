@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core Colors */
+    --color-background: #FEFEFE; /* soft off-white */
+    --color-foreground: #2C1810; /* rich dark brown */
+    --color-border: #E8E2DB; /* muted earth tone */
+    --color-input: #F8F6F3; /* warm neutral */
+    --color-ring: #8B4513; /* warm laterite brown */
+    
+    /* Card Colors */
+    --color-card: #FEFEFE; /* soft off-white */
+    --color-card-foreground: #2C1810; /* rich dark brown */
+    
+    /* Popover Colors */
+    --color-popover: #FEFEFE; /* soft off-white */
+    --color-popover-foreground: #2C1810; /* rich dark brown */
+    
+    /* Muted Colors */
+    --color-muted: #F8F6F3; /* warm neutral */
+    --color-muted-foreground: #6B5B4F; /* muted brown */
+    
+    /* Primary Colors */
+    --color-primary: #8B4513; /* warm laterite brown */
+    --color-primary-foreground: #FEFEFE; /* soft off-white */
+    
+    /* Secondary Colors */
+    --color-secondary: #228B22; /* deep forest green */
+    --color-secondary-foreground: #FEFEFE; /* soft off-white */
+    
+    /* Accent Colors */
+    --color-accent: #DAA520; /* golden temple brass */
+    --color-accent-foreground: #2C1810; /* rich dark brown */
+    
+    /* Destructive Colors */
+    --color-destructive: #D32F2F; /* clear red */
+    --color-destructive-foreground: #FEFEFE; /* soft off-white */
+    
+    /* Success Colors */
+    --color-success: #4CAF50; /* standard success green */
+    --color-success-foreground: #FEFEFE; /* soft off-white */
+    
+    /* Warning Colors */
+    --color-warning: #FF9800; /* warm amber */
+    --color-warning-foreground: #2C1810; /* rich dark brown */
+    
+    /* Error Colors */
+    --color-error: #D32F2F; /* clear red */
+    --color-error-foreground: #FEFEFE; /* soft off-white */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .font-caption {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .shadow-warm-sm {
+    box-shadow: 0 1px 2px 0 rgba(139, 69, 19, 0.1);
+  }
+  
+  .shadow-warm {
+    box-shadow: 0 4px 8px 0 rgba(139, 69, 19, 0.1);
+  }
+  
+  .shadow-warm-lg {
+    box-shadow: 0 8px 16px 0 rgba(139, 69, 19, 0.1);
+  }
+  
+  .transition-gentle {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .transition-meaningful {
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+.hover-lift  {
+    @apply transition-gentle hover:scale-[1.02];
+  }
+}
