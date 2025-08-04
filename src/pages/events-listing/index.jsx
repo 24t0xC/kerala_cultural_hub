@@ -69,9 +69,61 @@ const EventsListing = () => {
         }
       }
 
-      // Use the correct method name
-      const eventsData = await eventService?.getPublishedEvents(filters)
-      setEvents(eventsData || [])
+      // Get all events including pending approval ones for testing
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        
+        let allEventsQuery = supabase?.from('events')?.select(`
+          *,
+          organizer:user_profiles!organizer_id(id, full_name, email, phone),
+          event_artists(
+            id,
+            role,
+            artist:artist_profiles(
+              id,
+              stage_name,
+              art_forms,
+              user:user_profiles(full_name)
+            )
+          )
+        `)?.in('status', ['published', 'pending_approval', 'approved'])?.order('start_date', { ascending: true });
+
+        if (filters?.category) {
+          allEventsQuery = allEventsQuery?.eq('category', filters?.category);
+        }
+        if (filters?.city) {
+          allEventsQuery = allEventsQuery?.eq('city', filters?.city);
+        }
+        if (filters?.search) {
+          allEventsQuery = allEventsQuery?.or(`title.ilike.%${filters?.search}%,description.ilike.%${filters?.search}%`);
+        }
+        if (filters?.dateFrom) {
+          allEventsQuery = allEventsQuery?.gte('start_date', filters?.dateFrom);
+        }
+        if (filters?.dateTo) {
+          allEventsQuery = allEventsQuery?.lte('start_date', filters?.dateTo);
+        }
+        if (filters?.isFree !== undefined) {
+          allEventsQuery = allEventsQuery?.eq('is_free', filters?.isFree);
+        }
+
+        const { data: eventsData, error } = await allEventsQuery;
+        
+        if (error) {
+          console.error('Database error:', error);
+          // Fallback to published events only
+          const publishedEvents = await eventService?.getPublishedEvents(filters);
+          setEvents(publishedEvents || []);
+        } else {
+          console.log('Loaded all events:', eventsData);
+          setEvents(eventsData || []);
+        }
+      } catch (err) {
+        console.error('Error loading events with all statuses:', err);
+        // Fallback to published events only
+        const publishedEvents = await eventService?.getPublishedEvents(filters);
+        setEvents(publishedEvents || []);
+      }
     } catch (err) {
       setError('Failed to load events. Please try again.')
       console.error('Error loading events:', err)
@@ -273,13 +325,29 @@ const EventsListing = () => {
                   </div>
                   
                   {/* Event Status Badges */}
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <span className="bg-white text-orange-600 px-3 py-1 rounded-full text-sm font-semibold">
-                      {event?.category?.charAt(0)?.toUpperCase() + event?.category?.slice(1)}
-                    </span>
-                    {isEventToday(event?.start_date) && (
-                      <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        Today
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <span className="bg-white text-orange-600 px-3 py-1 rounded-full text-sm font-semibold">
+                        {event?.category?.charAt(0)?.toUpperCase() + event?.category?.slice(1)}
+                      </span>
+                      {isEventToday(event?.start_date) && (
+                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                          Today
+                        </span>
+                      )}
+                    </div>
+                    {/* Event Approval Status */}
+                    {event?.status && event.status !== 'published' && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        event.status === 'pending_approval' 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : event.status === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {event.status === 'pending_approval' ? 'Pending Review' 
+                          : event.status === 'approved' ? 'Approved' 
+                          : event.status.charAt(0).toUpperCase() + event.status.slice(1)}
                       </span>
                     )}
                   </div>

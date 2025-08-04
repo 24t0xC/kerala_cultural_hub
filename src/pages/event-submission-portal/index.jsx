@@ -127,16 +127,22 @@ const EventSubmissionPortal = () => {
       
       // Actually save to database
       const savedEvent = await eventService.createEvent(eventData);
+      console.log('Event saved successfully:', savedEvent);
       
       setSubmissionStatus({
         success: true,
         submissionId: savedEvent?.id || `EVT_${Date.now()}`,
-        message: 'Your event has been submitted successfully and is under review.',
+        message: 'Your event has been submitted successfully and is under review. You can view it in the events listing.',
         estimatedApproval: '3-5 business days'
       });
       
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Optionally redirect to events page after 3 seconds
+      setTimeout(() => {
+        navigate('/events');
+      }, 3000);
       
     } catch (error) {
       console.error('Event submission error:', error);
