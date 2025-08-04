@@ -116,13 +116,46 @@ export const eventService = {
   // Create new event (for organizers)
   async createEvent(eventData) {
     try {
-      const { data, error } = await supabase?.from('events')?.insert([eventData])?.select()?.single()
+      console.log('Creating event with data:', eventData);
+      
+      // Verify user exists in user_profiles table before creating event
+      if (eventData?.organizer_id) {
+        const { data: userProfile, error: userError } = await supabase
+          ?.from('user_profiles')
+          ?.select('id, full_name, email, role')
+          ?.eq('id', eventData.organizer_id)
+          ?.single();
+          
+        if (userError || !userProfile) {
+          console.error('User profile not found:', userError);
+          throw new Error(`User profile not found for organizer ID: ${eventData.organizer_id}. Please ensure you are logged in with a valid account.`);
+        }
+        
+        console.log('User profile found:', userProfile);
+      }
+      
+      const { data, error } = await supabase?.from('events')?.insert([eventData])?.select()?.single();
 
-      if (error) throw error
-      return data
+      if (error) {
+        console.error('Database error:', error);
+        console.error('Error code:', error?.code);
+        console.error('Error details:', error?.details);
+        console.error('Error hint:', error?.hint);
+        throw error;
+      }
+      
+      console.log('Event created successfully:', data);
+      return data;
     } catch (error) {
-      console.log('Error creating event:', error?.message)
-      throw error
+      console.error('Error creating event:', error);
+      console.error('Full error object:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        statusCode: error?.statusCode
+      });
+      throw error;
     }
   },
 

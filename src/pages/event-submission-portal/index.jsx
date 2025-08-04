@@ -114,12 +114,36 @@ const EventSubmissionPortal = () => {
       };
       
       // Validate required fields
-      if (!eventData.title || !eventData.description || !eventData.venue_name || !eventData.address || !eventData.start_date) {
-        throw new Error('Please fill in all required fields: title, description, venue name, address, and start date.');
+      if (!eventData.title?.trim()) {
+        throw new Error('Event title is required.');
+      }
+      if (!eventData.description?.trim()) {
+        throw new Error('Event description is required.');
+      }
+      if (!eventData.venue_name?.trim()) {
+        throw new Error('Venue name is required.');
+      }
+      if (!eventData.address?.trim()) {
+        throw new Error('Venue address is required.');
+      }
+      if (!eventData.start_date) {
+        throw new Error('Event start date is required.');
+      }
+      if (!eventData.category) {
+        throw new Error('Event category is required.');
       }
 
-      if (!user?.id) {
+      if (!user?.id && !user?.user_id) {
         throw new Error('User not authenticated. Please log in again.');
+      }
+      
+      // Additional validation
+      if (eventData.total_tickets && eventData.total_tickets <= 0) {
+        throw new Error('Total tickets must be greater than 0.');
+      }
+      
+      if (!eventData.is_free && (!eventData.ticket_price || eventData.ticket_price <= 0)) {
+        throw new Error('Ticket price must be greater than 0 for paid events.');
       }
 
       console.log('Submitting event data:', eventData);
@@ -146,10 +170,46 @@ const EventSubmissionPortal = () => {
       
     } catch (error) {
       console.error('Event submission error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        statusCode: error?.statusCode
+      });
+      
+      let errorMessage = 'Failed to submit event. ';
+      
+      // Provide specific error messages based on error type
+      if (error?.message?.includes('organizer_id')) {
+        errorMessage += 'User authentication issue. Please log in again and try.';
+      } else if (error?.message?.includes('events_organizer_id_fkey')) {
+        errorMessage += 'Invalid organizer ID. Please refresh and try again.';
+      } else if (error?.message?.includes('not-null')) {
+        errorMessage += 'Required fields are missing. Please check all required information.';
+      } else if (error?.code === 'PGRST301') {
+        errorMessage += 'Database connection issue. Please try again in a moment.';
+      } else if (error?.code === '23505') {
+        errorMessage += 'An event with similar details already exists.';
+      } else if (error?.message?.includes('authentication')) {
+        errorMessage += 'Please log in to submit events.';
+      } else if (error?.message?.includes('permission')) {
+        errorMessage += 'You do not have permission to create events.';
+      } else if (error?.message) {
+        errorMessage += `Error: ${error.message}`;
+      } else {
+        errorMessage += 'Unknown error occurred. Please try again or contact support.';
+      }
+      
       setSubmissionStatus({
         success: false,
-        message: 'Failed to submit event. Please try again.',
-        error: error?.message
+        message: errorMessage,
+        error: error?.message,
+        technicalDetails: {
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint
+        }
       });
     } finally {
       setIsSubmitting(false);
@@ -304,14 +364,63 @@ const EventSubmissionPortal = () => {
           <div className="flex-1 min-w-0">
             {submissionStatus?.success === false && (
               <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4">
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-                  <div className="flex items-center">
-                    <Icon name="AlertCircle" size={20} className="text-destructive mr-3" />
-                    <div>
-                      <h4 className="font-medium text-destructive">Submission Failed</h4>
-                      <p className="text-sm text-destructive/80 mt-1">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 mb-6">
+                  <div className="flex items-start">
+                    <Icon name="AlertCircle" size={24} className="text-destructive mr-3 flex-shrink-0 mt-1" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-destructive text-lg mb-2">Submission Failed</h4>
+                      <p className="text-destructive/90 mb-4 leading-relaxed">
                         {submissionStatus?.message}
                       </p>
+                      
+                      {/* Technical details for debugging */}
+                      {submissionStatus?.technicalDetails && (
+                        <details className="mb-4">
+                          <summary className="text-sm text-destructive/70 cursor-pointer hover:text-destructive font-medium">
+                            Technical Details (for support)
+                          </summary>
+                          <div className="mt-3 p-4 bg-destructive/5 border border-destructive/10 rounded text-xs text-destructive/80 space-y-2">
+                            {submissionStatus.technicalDetails.code && (
+                              <div><strong>Error Code:</strong> {submissionStatus.technicalDetails.code}</div>
+                            )}
+                            {submissionStatus.technicalDetails.details && (
+                              <div><strong>Details:</strong> {submissionStatus.technicalDetails.details}</div>
+                            )}
+                            {submissionStatus.technicalDetails.hint && (
+                              <div><strong>Hint:</strong> {submissionStatus.technicalDetails.hint}</div>
+                            )}
+                            {submissionStatus.error && (
+                              <div><strong>Raw Error:</strong> {submissionStatus.error}</div>
+                            )}
+                          </div>
+                        </details>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-3">
+                        <Button 
+                          onClick={handleStartNewSubmission}
+                          size="sm"
+                          variant="outline"
+                          className="border-destructive/30 text-destructive hover:bg-destructive/5"
+                        >
+                          <Icon name="RotateCcw" size={16} className="mr-2" />
+                          Try Again
+                        </Button>
+                        
+                        <Button 
+                          onClick={() => {
+                            console.log('Full submission status:', submissionStatus);
+                            console.log('Current user:', user);
+                            alert('Debug information logged to console. Press F12 to view, or contact support with the technical details above.');
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="border-destructive/30 text-destructive hover:bg-destructive/5"
+                        >
+                          <Icon name="HelpCircle" size={16} className="mr-2" />
+                          Get Help
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
