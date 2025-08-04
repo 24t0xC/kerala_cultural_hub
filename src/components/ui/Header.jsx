@@ -3,16 +3,35 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 
-const Header = ({ user = null, onAuthAction = () => {} }) => {
+const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [demoUser, setDemoUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Load demo user from localStorage on component mount
+  useEffect(() => {
+    const storedDemoUser = localStorage.getItem('kerala_demo_user');
+    if (storedDemoUser) {
+      setDemoUser(JSON.parse(storedDemoUser));
+    }
+  }, []);
+
+  // Get user role from userProfile, Supabase user, or demo user
+  const currentUser = user || demoUser;
+  const userRole = userProfile?.role || currentUser?.role || 'user';
+
   const navigationItems = [
-    { label: 'Discover', path: '/event-details', icon: 'Calendar' },
-    { label: 'Community', path: '/artist-organizer-profiles', icon: 'Users' },
-    { label: 'My Events', path: '/my-events', icon: 'BookmarkCheck' },
+    { label: 'Events', path: '/events', icon: 'Calendar' },
+    { label: 'Artists', path: '/artists', icon: 'Users' },
+    { label: 'Culture', path: '/culture', icon: 'BookOpen' },
+    { label: 'Map', path: '/interactive-cultural-map', icon: 'Map' },
+  ];
+
+  const organizerNavigation = [
+    { label: 'Create Event', path: '/event-submission-portal', icon: 'Plus' },
+    { label: 'My Events', path: '/user-dashboard', icon: 'Calendar' },
   ];
 
   const adminNavigation = [
@@ -30,6 +49,10 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
 
   const handleAuthAction = (action) => {
     if (action === 'logout') {
+      // Clear demo user from localStorage
+      localStorage.removeItem('kerala_demo_user');
+      setDemoUser(null);
+      // Call parent logout handler for real auth
       onAuthAction('logout');
     } else {
       navigate('/login-register');
@@ -100,7 +123,22 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
               </Button>
             ))}
             
-            {user?.role === 'admin' && adminNavigation?.map((item) => (
+            {(userRole === 'organizer' || userRole === 'artist') && organizerNavigation?.map((item) => (
+              <Button
+                key={item?.path}
+                variant={isActivePath(item?.path) ? "default" : "ghost"}
+                size="sm"
+                iconName={item?.icon}
+                iconPosition="left"
+                iconSize={16}
+                onClick={() => handleNavigation(item?.path)}
+                className="transition-all duration-200 hover:transform hover:-translate-y-0.5"
+              >
+                {item?.label}
+              </Button>
+            ))}
+            
+            {userRole === 'admin' && adminNavigation?.map((item) => (
               <Button
                 key={item?.path}
                 variant={isActivePath(item?.path) ? "default" : "ghost"}
@@ -118,7 +156,7 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
 
           {/* Desktop User Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {user ? (
+            {currentUser ? (
               <div className="user-menu-container relative">
                 <Button
                   variant="ghost"
@@ -128,7 +166,7 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
                 >
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground font-medium text-sm">
-                      {user?.name?.charAt(0) || 'U'}
+                      {currentUser?.name?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <Icon name="ChevronDown" size={16} />
@@ -137,8 +175,11 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-md shadow-warm-lg animate-slide-in">
                     <div className="p-3 border-b border-border">
-                      <p className="font-medium text-sm text-popover-foreground">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <p className="font-medium text-sm text-popover-foreground">{currentUser?.name}</p>
+                      <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
+                      {currentUser?.isDemo && (
+                        <p className="text-xs text-blue-600 font-semibold">Demo Mode</p>
+                      )}
                     </div>
                     <div className="py-1">
                       <button
@@ -212,7 +253,22 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
                 </Button>
               ))}
               
-              {user?.role === 'admin' && adminNavigation?.map((item) => (
+              {(userRole === 'organizer' || userRole === 'artist') && organizerNavigation?.map((item) => (
+                <Button
+                  key={item?.path}
+                  variant={isActivePath(item?.path) ? "default" : "ghost"}
+                  size="sm"
+                  iconName={item?.icon}
+                  iconPosition="left"
+                  iconSize={16}
+                  onClick={() => handleNavigation(item?.path)}
+                  className="w-full justify-start"
+                >
+                  {item?.label}
+                </Button>
+              ))}
+              
+              {userRole === 'admin' && adminNavigation?.map((item) => (
                 <Button
                   key={item?.path}
                   variant={isActivePath(item?.path) ? "default" : "ghost"}
@@ -229,11 +285,14 @@ const Header = ({ user = null, onAuthAction = () => {} }) => {
 
               <hr className="my-3 border-border" />
 
-              {user ? (
+              {currentUser ? (
                 <div className="space-y-2">
                   <div className="px-3 py-2">
-                    <p className="font-medium text-sm text-foreground">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="font-medium text-sm text-foreground">{currentUser?.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
+                    {currentUser?.isDemo && (
+                      <p className="text-xs text-blue-600 font-semibold">Demo Mode</p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"

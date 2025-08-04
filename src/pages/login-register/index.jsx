@@ -50,7 +50,16 @@ const LoginRegisterPage = () => {
         );
         
         if (matchedUser) {
-          // Demo mode - simulate successful login
+          // Demo mode - store user in localStorage for header access
+          const demoUser = {
+            id: Date.now(),
+            name: matchedUser.name,
+            email: matchedUser.email,
+            role: matchedUser.role,
+            isDemo: true
+          };
+          
+          localStorage.setItem('kerala_demo_user', JSON.stringify(demoUser));
           console.log(`Demo login successful as ${matchedUser.role}`);
           
           // For demo purposes, navigate to appropriate page
@@ -62,6 +71,9 @@ const LoginRegisterPage = () => {
           
           // Show success notification
           alert(`✅ Demo Login Successful!\n\nRole: ${matchedUser.role}\nNote: This is demo mode. Configure Supabase OAuth for production.`);
+          
+          // Force page reload to trigger header update
+          window.location.reload();
         } else {
           throw new Error('Invalid email or password. Please use the demo credentials shown below.');
         }

@@ -15,6 +15,7 @@ import ProfileFilters from './components/ProfileFilters';
 const ArtistOrganizerProfiles = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userProfile] = useState(null); // For consistency with header props
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [followingProfiles, setFollowingProfiles] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -415,7 +416,7 @@ const ArtistOrganizerProfiles = () => {
   if (selectedProfile) {
     return (
       <div className="min-h-screen bg-background">
-        <Header user={user} onAuthAction={handleAuthAction} />
+        <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
         <BreadcrumbTrail 
           customBreadcrumbs={[
             { label: 'Home', path: '/', icon: 'Home' },

@@ -18,6 +18,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [user, setUser] = useState(null);
+  const [userProfile] = useState(null); // For consistency with header props
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -584,7 +585,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header user={user} onAuthAction={handleAuthAction} />
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       <RoleBasedNavigation 
         user={user} 
         isCollapsed={isNavCollapsed}

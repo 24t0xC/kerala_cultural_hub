@@ -20,6 +20,7 @@ const EventDetails = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userProfile] = useState(null); // For consistency with header props
   const [selectedTickets, setSelectedTickets] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
   const [isEventSaved, setIsEventSaved] = useState(false);
@@ -375,7 +376,7 @@ const EventDetails = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header user={user} onAuthAction={handleAuthAction} />
+        <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-1/3"></div>
