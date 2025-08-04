@@ -124,6 +124,28 @@ export const AuthProvider = ({ children, setError }) => {
     }
   }
 
+  const signInWithOAuth = async (provider) => {
+    try {
+      const { data, error } = await supabase?.auth?.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/events`
+        }
+      })
+      
+      if (error) {
+        setError?.(error?.message)
+        return { error: error?.message };
+      }
+      
+      return { data }
+    } catch (error) {
+      const errorMessage = `Failed to sign in with ${provider}. Please try again.`
+      setError?.(errorMessage)
+      return { error: errorMessage }
+    }
+  }
+
   const updateProfile = async (updates) => {
     try {
       if (!user) {
@@ -188,6 +210,7 @@ export const AuthProvider = ({ children, setError }) => {
     signUp,
     signIn,
     signOut,
+    signInWithOAuth,
     updateProfile,
     uploadProfileImage
   }

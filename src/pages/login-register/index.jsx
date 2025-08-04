@@ -14,7 +14,7 @@ const LoginRegisterPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
-  const { user, userProfile, signIn, signUp, signOut, loading } = useAuth();
+  const { user, userProfile, signIn, signUp, signOut, signInWithOAuth, loading } = useAuth();
   const navigate = useNavigate();
 
   // Mock credentials for testing (keeping for demo purposes)
@@ -50,13 +50,23 @@ const LoginRegisterPage = () => {
         );
         
         if (matchedUser) {
-          alert(`Demo mode: Would login as ${matchedUser.role}. In production, this would use Supabase authentication.`);
-          // For demo purposes, show mock login info
+          // Demo mode - simulate successful login
+          console.log(`Demo login successful as ${matchedUser.role}`);
+          
+          // For demo purposes, navigate to appropriate page
+          if (matchedUser?.role === 'admin') {
+            navigate('/admin-dashboard');
+          } else {
+            navigate('/events');
+          }
+          
+          // Show success notification
+          alert(`✅ Demo Login Successful!\n\nRole: ${matchedUser.role}\nNote: This is demo mode. Configure Supabase OAuth for production.`);
         } else {
-          throw new Error(error || 'Invalid email or password. Try the demo credentials provided below.');
+          throw new Error('Invalid email or password. Please use the demo credentials shown below.');
         }
       }
-      // Success case is handled by useEffect when user state changes
+      // Success case for real Supabase login is handled by useEffect when user state changes
     } catch (error) {
       alert(error?.message || 'Login failed. Please try again.');
     } finally {
@@ -90,23 +100,16 @@ const LoginRegisterPage = () => {
     setIsLoading(true);
     
     try {
-      // Simulate social login
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await signInWithOAuth(provider);
       
-      const userData = {
-        id: Date.now(),
-        name: `${provider?.charAt(0)?.toUpperCase() + provider?.slice(1)} User`,
-        email: `user@${provider}.com`,
-        role: 'enthusiast',
-        loginTime: new Date()?.toISOString(),
-        provider: provider
-      };
+      if (error) {
+        throw new Error(error);
+      }
       
-      localStorage.setItem('keralaCulturalHub_user', JSON.stringify(userData));
-      setUser(userData);
-      navigate('/event-details');
+      // Success case - OAuth will redirect automatically
+      // No need to manually navigate since Supabase handles the redirect
     } catch (error) {
-      alert(`${provider} login failed. Please try again.`);
+      alert(error?.message || `${provider} login failed. Please make sure ${provider} OAuth is configured in your Supabase dashboard.`);
     } finally {
       setIsLoading(false);
     }
@@ -195,17 +198,31 @@ const LoginRegisterPage = () => {
               </div>
             </div>
 
-            {/* Test Credentials Info */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
-              <h3 className="font-medium text-sm text-foreground mb-2 flex items-center">
-                <Icon name="Info" size={16} className="mr-2" />
-                Test Credentials
+            {/* OAuth Setup Info */}
+            <div className="mt-6 p-4 bg-blue-50/50 rounded-lg border border-blue-200">
+              <h3 className="font-medium text-sm text-blue-800 mb-2 flex items-center">
+                <Icon name="Settings" size={16} className="mr-2" />
+                OAuth Configuration
               </h3>
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-xs text-blue-700 space-y-1">
+                <p>• <strong>Google Login:</strong> Requires Supabase OAuth setup</p>
+                <p>• <strong>Setup Guide:</strong> See OAUTH_SETUP.md in project root</p>
+                <p>• <strong>Status:</strong> Configure in Supabase Dashboard → Authentication → Providers</p>
+              </div>
+            </div>
+
+            {/* Test Credentials Info */}
+            <div className="mt-4 p-4 bg-green-50/50 rounded-lg border border-green-200">
+              <h3 className="font-medium text-sm text-green-800 mb-2 flex items-center">
+                <Icon name="Key" size={16} className="mr-2" />
+                Demo Login Credentials ✅
+              </h3>
+              <div className="text-xs text-green-700 space-y-1">
                 <p><strong>Admin:</strong> admin@keralahub.com / admin123</p>
                 <p><strong>Artist:</strong> artist@keralahub.com / artist123</p>
                 <p><strong>Organizer:</strong> organizer@keralahub.com / organizer123</p>
                 <p><strong>User:</strong> user@keralahub.com / user123</p>
+                <p className="text-green-600 mt-2"><strong>✓ These work immediately for testing!</strong></p>
               </div>
             </div>
 
