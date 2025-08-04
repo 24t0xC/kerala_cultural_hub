@@ -98,13 +98,20 @@ const SubmissionWizard = ({ onSubmit, onSaveDraft, savedDraft = null }) => {
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        return formData?.basicInfo?.title && formData?.basicInfo?.description && formData?.basicInfo?.category;
+        return formData?.basicInfo?.title && 
+               formData?.basicInfo?.description && 
+               formData?.basicInfo?.category &&
+               formData?.basicInfo?.startDate;
       case 2:
-        return formData?.venue?.venueName && formData?.venue?.address && formData?.venue?.capacity;
+        return formData?.venue?.venueName && 
+               formData?.venue?.address && 
+               formData?.venue?.capacity;
       case 3:
-        return formData?.media?.featuredImage || formData?.media?.gallery?.length > 0;
+        // Media step is optional - always return true
+        return true;
       case 4:
-        return formData?.ticketing?.isFree || formData?.ticketing?.ticketTiers?.length > 0;
+        // Ticketing step - free events don't need ticket tiers
+        return true;
       default:
         return false;
     }

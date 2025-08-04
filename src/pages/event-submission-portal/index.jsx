@@ -49,14 +49,81 @@ const EventSubmissionPortal = () => {
       // Import event service
       const { eventService } = await import('../../services/eventService');
       
-      // Prepare event data for database
-      const eventData = {
-        ...formData,
-        organizer_id: user?.id,
-        status: 'pending', // Events start as pending for review
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Map form categories to database enum values
+      const categoryMapping = {
+        'classical-dance': 'dance',
+        'folk-dance': 'dance',
+        'classical-music': 'music',
+        'folk-music': 'music',
+        'theater': 'theater',
+        'festival': 'festival',
+        'martial-arts': 'cultural',
+        'visual-arts': 'art',
+        'literature': 'cultural',
+        'handicrafts': 'cultural'
       };
+
+      // Transform form data to match database schema
+      const eventData = {
+        // Basic information
+        title: formData.basicInfo?.title,
+        description: formData.basicInfo?.description,
+        short_description: formData.basicInfo?.description?.substring(0, 200),
+        category: categoryMapping[formData.basicInfo?.category] || 'cultural',
+        
+        // Venue and location
+        venue_name: formData.venue?.venueName,
+        address: formData.venue?.address,
+        city: formData.venue?.city || 'Thiruvananthapuram',
+        state: 'Kerala',
+        country: 'India',
+        latitude: formData.venue?.latitude,
+        longitude: formData.venue?.longitude,
+        
+        // Date and time - combine date and time fields
+        start_date: new Date(`${formData.basicInfo?.startDate}T${formData.basicInfo?.startTime || '10:00'}`).toISOString(),
+        end_date: new Date(`${formData.basicInfo?.endDate || formData.basicInfo?.startDate}T${formData.basicInfo?.endTime || '18:00'}`).toISOString(),
+        
+        // Media
+        featured_image_url: formData.media?.featuredImage,
+        image_urls: formData.media?.gallery || [],
+        video_url: formData.media?.videoUrl,
+        
+        // Ticketing
+        is_free: formData.ticketing?.isFree !== false,
+        ticket_price: formData.ticketing?.isFree ? 0 : (formData.ticketing?.ticketTiers?.[0]?.price || 0),
+        total_tickets: parseInt(formData.venue?.capacity) || 100,
+        available_tickets: parseInt(formData.venue?.capacity) || 100,
+        
+        // Additional fields
+        tags: [
+          ...(formData.basicInfo?.subcategory ? [formData.basicInfo.subcategory] : []),
+          ...(formData.basicInfo?.category ? [formData.basicInfo.category] : [])
+        ],
+        cultural_significance: formData.media?.culturalDocumentation,
+        requirements: formData.basicInfo?.ageRestriction ? `Age requirement: ${formData.basicInfo.ageRestriction}` : null,
+        contact_info: {
+          organizer: user?.name || user?.full_name || user?.email,
+          email: user?.email,
+          phone: user?.phone
+        },
+        
+        // Admin fields
+        organizer_id: user?.id || user?.user_id, // Handle different user object structures
+        status: 'pending_approval' // Use correct enum value
+      };
+      
+      // Validate required fields
+      if (!eventData.title || !eventData.description || !eventData.venue_name || !eventData.address || !eventData.start_date) {
+        throw new Error('Please fill in all required fields: title, description, venue name, address, and start date.');
+      }
+
+      if (!user?.id) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
+
+      console.log('Submitting event data:', eventData);
+      console.log('User data:', user);
       
       // Actually save to database
       const savedEvent = await eventService.createEvent(eventData);
