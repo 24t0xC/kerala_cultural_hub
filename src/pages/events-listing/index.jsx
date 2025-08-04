@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Search, Star, Users, Heart, Ticket } from 'lucide-react';
 import { eventService } from '../../services/eventService';
 import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 
 const EventsListing = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,7 +52,7 @@ const EventsListing = () => {
       const filters = {}
       
       if (selectedCategory) filters.category = selectedCategory
-      if (selectedLocation) filters.location = selectedLocation
+      if (selectedLocation) filters.city = selectedLocation // Fix: use 'city' instead of 'location'
       if (dateFilter) {
         const today = new Date()
         if (dateFilter === 'today') {
@@ -68,7 +69,8 @@ const EventsListing = () => {
         }
       }
 
-      const eventsData = await eventService?.getPublicEvents(filters)
+      // Use the correct method name
+      const eventsData = await eventService?.getPublishedEvents(filters)
       setEvents(eventsData || [])
     } catch (err) {
       setError('Failed to load events. Please try again.')
@@ -86,7 +88,8 @@ const EventsListing = () => {
 
     try {
       setLoading(true)
-      const searchResults = await eventService?.searchEvents(searchTerm)
+      // Use the search filter in getPublishedEvents
+      const searchResults = await eventService?.getPublishedEvents({ search: searchTerm })
       setEvents(searchResults || [])
     } catch (err) {
       setError('Search failed. Please try again.')
@@ -124,10 +127,24 @@ const EventsListing = () => {
     return eventDate > now
   }
 
+  const handleAuthAction = (action) => {
+    if (action === 'logout') {
+      localStorage.removeItem('kerala_demo_user');
+      navigate('/login');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <Header 
+        user={user}
+        userProfile={userProfile}
+        onAuthAction={handleAuthAction}
+      />
+      {/* Main Content */}
+      <div className="bg-white shadow-sm border-b pt-16">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Cultural Events in Kerala</h1>
           

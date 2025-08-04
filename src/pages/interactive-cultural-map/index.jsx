@@ -1,45 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
 import { Map, List, Filter, Search, MapPin } from 'lucide-react';
 import Button from '../../components/ui/Button';
- import MapFilters from'./components/MapFilters';
- import EventMarkerCard from'./components/EventMarkerCard';
- import EventListView from'./components/EventListView';
- import LocationSearch from'./components/LocationSearch';
- import ActiveFiltersChips from'./components/ActiveFiltersChips';
+import GoogleMap from '../../components/GoogleMap';
+import MapFilters from'./components/MapFilters';
+import EventMarkerCard from'./components/EventMarkerCard';
+import EventListView from'./components/EventListView';
+import LocationSearch from'./components/LocationSearch';
+import ActiveFiltersChips from'./components/ActiveFiltersChips';
 import { eventService } from '../../services/eventService';
 import { useAuth } from '../../contexts/AuthContext';
-
-// Mock Google Maps component (replace with actual implementation)
-const GoogleMap = ({ events, center, zoom, onMarkerClick, selectedEvent }) => {
-  return (
-    <div className="w-full h-full bg-gray-200 relative flex items-center justify-center">
-      <div className="text-center">
-        <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-        <p className="text-gray-600 mb-2">Interactive Map View</p>
-        <p className="text-sm text-gray-500">
-          Showing {events.length} events across Kerala
-        </p>
-        
-        {/* Mock markers for demonstration */}
-        <div className="absolute inset-0 pointer-events-none">
-          {events.slice(0, 5).map((event, index) => (
-            <div
-              key={event.id}
-              className="absolute w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg cursor-pointer pointer-events-auto"
-              style={{
-                left: `${20 + index * 15}%`,
-                top: `${30 + index * 10}%`
-              }}
-              onClick={() => onMarkerClick(event)}
-              title={event.title}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function InteractiveCulturalMap() {
   const { user } = useAuth()

@@ -15,11 +15,29 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [showCalendarIntegration, setShowCalendarIntegration] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userProfile] = useState(null);
 
   // Mock user data
+  useEffect(() => {
+    // Check for demo user first
+    const storedDemoUser = localStorage.getItem('kerala_demo_user');
+    if (storedDemoUser) {
+      setUser(JSON.parse(storedDemoUser));
+    } else {
+      // Fallback mock user
+      setUser({
+        id: 1,
+        name: "User",
+        email: "user@keralahub.com",
+        role: "user"
+      });
+    }
+  }, []);
+
   const userData = {
-    name: "Priya Nair",
-    email: "priya.nair@gmail.com",
+    name: user?.name || "Priya Nair",
+    email: user?.email || "priya.nair@gmail.com",
     avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
     location: "Kochi, Kerala",
     memberSince: "Jan 2023",
@@ -176,6 +194,16 @@ const UserDashboard = () => {
     console.log(`Syncing ${events?.length} events with ${calendarType} calendar`);
   };
 
+  const handleAuthAction = (action) => {
+    if (action === 'logout') {
+      localStorage.removeItem('kerala_demo_user');
+      setUser(null);
+      navigate('/login');
+    } else {
+      navigate('/login');
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'upcoming':
@@ -301,9 +329,9 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        title="My Dashboard"
-        showSearch={false}
-        showUserMenu={true}
+        user={user}
+        userProfile={userProfile}
+        onAuthAction={handleAuthAction}
       />
       <main className="pt-16 lg:pt-30 pb-24 lg:pb-8">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">

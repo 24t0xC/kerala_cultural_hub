@@ -13,9 +13,27 @@ const EventSubmissionPortal = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userProfile] = useState(null);
 
-  // Mock user role - in real app, this would come from auth context
-  const userRole = 'organizer'; // 'visitor', 'artist', 'organizer', 'admin'
+  // Mock user for demo - in real app, this would come from auth context
+  useEffect(() => {
+    // Check for demo user first
+    const storedDemoUser = localStorage.getItem('kerala_demo_user');
+    if (storedDemoUser) {
+      setUser(JSON.parse(storedDemoUser));
+    } else {
+      // Fallback mock user for direct access
+      setUser({
+        id: 2,
+        name: "Event Organizer",
+        email: "organizer@keralahub.com",
+        role: "organizer"
+      });
+    }
+  }, []);
+
+  const userRole = user?.role || 'organizer';
 
   useEffect(() => {
     // Check if user has permission to submit events
@@ -28,14 +46,24 @@ const EventSubmissionPortal = () => {
   const handleSubmitEvent = async (formData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Import event service
+      const { eventService } = await import('../../services/eventService');
       
-      // Mock submission response
-      const submissionId = `EVT_${Date.now()}`;
+      // Prepare event data for database
+      const eventData = {
+        ...formData,
+        organizer_id: user?.id,
+        status: 'pending', // Events start as pending for review
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Actually save to database
+      const savedEvent = await eventService.createEvent(eventData);
+      
       setSubmissionStatus({
         success: true,
-        submissionId,
+        submissionId: savedEvent?.id || `EVT_${Date.now()}`,
         message: 'Your event has been submitted successfully and is under review.',
         estimatedApproval: '3-5 business days'
       });
@@ -44,6 +72,7 @@ const EventSubmissionPortal = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
     } catch (error) {
+      console.error('Event submission error:', error);
       setSubmissionStatus({
         success: false,
         message: 'Failed to submit event. Please try again.',
@@ -87,13 +116,23 @@ const EventSubmissionPortal = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAuthAction = (action) => {
+    if (action === 'logout') {
+      localStorage.removeItem('kerala_demo_user');
+      setUser(null);
+      navigate('/login');
+    } else {
+      navigate('/login');
+    }
+  };
+
   if (submissionStatus?.success) {
     return (
       <div className="min-h-screen bg-background">
         <Header 
-          title="Event Submission Portal"
-          showSearch={false}
-          showUserMenu={true}
+          user={user}
+          userProfile={userProfile}
+          onAuthAction={handleAuthAction}
         />
         <BottomTabNavigation />
         <div className="pt-16 lg:pt-30 pb-20 lg:pb-6">
