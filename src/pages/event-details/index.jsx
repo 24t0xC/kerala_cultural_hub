@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import BreadcrumbTrail from '../../components/ui/BreadcrumbTrail';
 import FloatingActionButton from '../../components/ui/FloatingActionButton';
@@ -19,8 +20,8 @@ import RelatedEvents from './components/RelatedEvents';
 const EventDetails = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [userProfile] = useState(null); // For consistency with header props
+  const location = useLocation();
+  const { user, userProfile, signOut, loading: authLoading } = useAuth();
   const [selectedTickets, setSelectedTickets] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
   const [isEventSaved, setIsEventSaved] = useState(false);

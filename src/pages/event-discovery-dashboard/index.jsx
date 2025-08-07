@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, MapIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import Header from '../../components/ui/Header';
  import EventGrid from'./components/EventGrid';
  import CategoryFilters from'./components/CategoryFilters';
  import FilterPanel from'./components/FilterPanel';
@@ -10,7 +12,8 @@ import { eventService } from '../../services/eventService';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function EventDiscoveryDashboard() {
-  const { user } = useAuth()
+  const { user, userProfile, signOut } = useAuth()
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [featuredEvents, setFeaturedEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -113,6 +116,20 @@ export default function EventDiscoveryDashboard() {
     })
   }
 
+  const handleAuthAction = async (action) => {
+    if (action === 'logout') {
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+        navigate('/login-register');
+      }
+    } else {
+      navigate('/login-register');
+    }
+  };
+
   const hasActiveFilters = searchTerm || selectedCategory || 
     Object.values(filters).some(v => v !== '' && v !== undefined && v !== 'start_date')
 
@@ -130,9 +147,10 @@ export default function EventDiscoveryDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       {/* Hero Section with Featured Events */}
       {!hasActiveFilters && featuredEvents.length > 0 && (
-        <section className="bg-white shadow-sm">
+        <section className="bg-white shadow-sm pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -148,7 +166,7 @@ export default function EventDiscoveryDashboard() {
       )}
 
       {/* Search and Filter Section */}
-      <section className="bg-white border-t border-gray-200">
+      <section className="bg-white border-t border-gray-200 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             {/* Search Bar */}

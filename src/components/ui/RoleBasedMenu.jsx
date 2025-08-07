@@ -7,6 +7,7 @@ const RoleBasedMenu = ({
   isOpen = false,
   onClose,
   onNavigate,
+  onAuthAction,
   className = ''
 }) => {
   const [activeSection, setActiveSection] = useState(null);
@@ -93,7 +94,11 @@ const RoleBasedMenu = ({
   const currentMenuSections = menuSections?.[userRole] || menuSections?.visitor;
 
   const handleItemClick = (path) => {
-    onNavigate?.(path);
+    if (path === '/logout') {
+      onAuthAction?.('logout');
+    } else {
+      onNavigate?.(path);
+    }
     onClose?.();
   };
 
