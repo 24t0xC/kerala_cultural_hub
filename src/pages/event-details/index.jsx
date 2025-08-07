@@ -306,21 +306,21 @@ const EventDetails = () => {
     }
   ];
 
-  // Mock user data
+  // Load event data (remove mock user - use AuthContext instead)
   useEffect(() => {
-    const mockUser = {
-      id: 1,
-      name: "Ananya Pillai",
-      email: "ananya.pillai@email.com",
-      role: "user"
-    };
-    setUser(mockUser);
+    // Simulate event loading
     setIsLoading(false);
   }, []);
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      setUser(null);
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+        navigate('/login-register');
+      }
     } else {
       navigate('/login-register');
     }
@@ -374,7 +374,7 @@ const EventDetails = () => {
     { label: mockEvent?.title, path: `/event-details?id=${eventId}`, icon: 'Eye', isLast: true }
   ];
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
@@ -391,7 +391,7 @@ const EventDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header user={user} onAuthAction={handleAuthAction} />
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       <main className="container mx-auto px-4 py-6">
         <BreadcrumbTrail customBreadcrumbs={breadcrumbs} />
         
