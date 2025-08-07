@@ -6,21 +6,11 @@ import Button from './Button';
 const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [demoUser, setDemoUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load demo user from localStorage on component mount
-  useEffect(() => {
-    const storedDemoUser = localStorage.getItem('kerala_demo_user');
-    if (storedDemoUser) {
-      setDemoUser(JSON.parse(storedDemoUser));
-    }
-  }, []);
-
-  // Get user role from userProfile, Supabase user, or demo user
-  const currentUser = user || demoUser;
-  const userRole = userProfile?.role || currentUser?.role || 'user';
+  // Get user role from userProfile or user metadata
+  const userRole = userProfile?.role || user?.user_metadata?.role || 'user';
 
   const navigationItems = [
     { label: 'Events', path: '/events', icon: 'Calendar' },
@@ -156,7 +146,7 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
 
           {/* Desktop User Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {currentUser ? (
+            {user ? (
               <div className="user-menu-container relative">
                 <Button
                   variant="ghost"
@@ -166,7 +156,7 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
                 >
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground font-medium text-sm">
-                      {currentUser?.name?.charAt(0) || 'U'}
+                      {userProfile?.full_name?.charAt(0) || user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <Icon name="ChevronDown" size={16} />
@@ -175,11 +165,8 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-md shadow-warm-lg animate-slide-in">
                     <div className="p-3 border-b border-border">
-                      <p className="font-medium text-sm text-popover-foreground">{currentUser?.name}</p>
-                      <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
-                      {currentUser?.isDemo && (
-                        <p className="text-xs text-blue-600 font-semibold">Demo Mode</p>
-                      )}
+                      <p className="font-medium text-sm text-popover-foreground">{userProfile?.full_name || user?.user_metadata?.full_name || 'User'}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
                     <div className="py-1">
                       <button
@@ -285,14 +272,11 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
 
               <hr className="my-3 border-border" />
 
-              {currentUser ? (
+              {user ? (
                 <div className="space-y-2">
                   <div className="px-3 py-2">
-                    <p className="font-medium text-sm text-foreground">{currentUser?.name}</p>
-                    <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
-                    {currentUser?.isDemo && (
-                      <p className="text-xs text-blue-600 font-semibold">Demo Mode</p>
-                    )}
+                    <p className="font-medium text-sm text-foreground">{userProfile?.full_name || user?.user_metadata?.full_name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <Button
                     variant="ghost"

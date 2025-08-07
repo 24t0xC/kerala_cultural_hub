@@ -17,29 +17,18 @@ const LoginRegisterPage = () => {
   const { user, userProfile, signIn, signUp, signOut, signInWithOAuth, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Mock credentials for testing (keeping for demo purposes)
-  const mockCredentials = {
-    admin: { email: "admin@keralahub.com", password: "admin123", role: "admin", name: "Admin User" },
-    artist: { email: "artist@keralahub.com", password: "artist123", role: "artist", name: "Ravi Menon" },
-    organizer: { email: "organizer@keralahub.com", password: "organizer123", role: "organizer", name: "Priya Nair" },
-    user: { email: "user@keralahub.com", password: "user123", role: "enthusiast", name: "Arjun Kumar" }
-  };
+  // Remove mock credentials - use real authentication only
+
+  // Get redirect parameter from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectPath = urlParams.get('redirect') || '/events';
 
   useEffect(() => {
-    // Check if user is already logged in via Supabase or demo mode
-    const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
-    
-    if ((user && !loading) || demoUser?.id) {
-      // Redirect based on user role
-      const userRole = userProfile?.role || user?.user_metadata?.role || demoUser?.role || 'user';
-      
-      if (userRole === 'admin') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/events');
-      }
+    // Check if user is already logged in
+    if (user && !loading) {
+      navigate(redirectPath);
     }
-  }, [user, userProfile, loading, navigate]);
+  }, [user, loading, navigate, redirectPath]);
 
   const handleLogin = async (formData) => {
     setIsLoading(true);
@@ -48,39 +37,11 @@ const LoginRegisterPage = () => {
       const { error } = await signIn(formData?.email, formData?.password);
       
       if (error) {
-        // If Supabase login fails, check mock credentials for demo
-        const matchedUser = Object.values(mockCredentials)?.find(
-          cred => cred?.email === formData?.email && cred?.password === formData?.password
-        );
-        
-        if (matchedUser) {
-          // Demo mode - store user in localStorage for header access
-          const demoUser = {
-            id: Date.now(),
-            name: matchedUser.name,
-            email: matchedUser.email,
-            role: matchedUser.role,
-            isDemo: true
-          };
-          
-          localStorage.setItem('kerala_demo_user', JSON.stringify(demoUser));
-          console.log(`Demo login successful as ${matchedUser.role}`);
-          
-          // For demo purposes, navigate to appropriate page
-          if (matchedUser?.role === 'admin') {
-            navigate('/admin-dashboard');
-          } else {
-            navigate('/events');
-          }
-          
-          // Show success notification
-          alert(`✅ Demo Login Successful!\n\nRole: ${matchedUser.role}\nNote: This is demo mode. Configure Supabase OAuth for production.`);
-          
-          // Force page reload to trigger header update
-          window.location.reload();
-        } else {
-          throw new Error('Invalid email or password. Please use the demo credentials shown below.');
-        }
+        console.error('Login error:', error);
+        alert(`Login failed: ${error}`);
+      } else {
+        console.log('Login successful');
+        navigate(redirectPath);
       }
       // Success case for real Supabase login is handled by useEffect when user state changes
     } catch (error) {

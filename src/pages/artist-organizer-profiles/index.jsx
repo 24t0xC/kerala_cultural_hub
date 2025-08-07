@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import BreadcrumbTrail from '../../components/ui/BreadcrumbTrail';
 import FloatingActionButton from '../../components/ui/FloatingActionButton';
@@ -14,8 +15,8 @@ import ProfileFilters from './components/ProfileFilters';
 
 const ArtistOrganizerProfiles = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [userProfile] = useState(null); // For consistency with header props
+  const location = useLocation();
+  const { user, userProfile, signOut, loading } = useAuth();
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [followingProfiles, setFollowingProfiles] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,16 +28,13 @@ const ArtistOrganizerProfiles = () => {
   });
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-  // Mock user data
+  // Check authentication
   useEffect(() => {
-    const mockUser = {
-      id: 1,
-      name: "Arjun Nair",
-      email: "arjun.nair@email.com",
-      role: "user"
-    };
-    setUser(mockUser);
-  }, []);
+    if (!loading && !user) {
+      // Redirect to login with current path for return after login
+      navigate(`/login-register?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    }
+  }, [user, loading, navigate, location.pathname, location.search]);
 
   // Mock profiles data
   const profiles = [
@@ -320,10 +318,14 @@ const ArtistOrganizerProfiles = () => {
     }
   ];
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      setUser(null);
-      navigate('/');
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
     } else {
       navigate('/login-register');
     }

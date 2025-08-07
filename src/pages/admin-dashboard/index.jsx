@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -17,23 +17,42 @@ import ActivityFeed from './components/ActivityFeed';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user: authUser, userProfile, signOut } = useAuth();
+  const location = useLocation();
+  const { user, userProfile, signOut, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Get user role from auth context or demo user
-  const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
-  const currentUser = authUser || demoUser;
-  const userRole = userProfile?.role || authUser?.user_metadata?.role || demoUser?.role || 'user';
-
-  // Redirect if not admin (additional check even with ProtectedRoute)
+  // Check authentication and authorization
   useEffect(() => {
-    if (currentUser && userRole !== 'admin') {
+    if (!loading && !user) {
+      // Redirect to login with current path for return after login
+      navigate(`/login-register?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+      return;
+    }
+
+    const userRole = userProfile?.role || user?.user_metadata?.role || 'user';
+    if (user && userRole !== 'admin') {
       navigate('/unauthorized');
     }
-  }, [currentUser, userRole, navigate]);
+  }, [user, userProfile, loading, navigate, location.pathname, location.search]);
+
+  // Return early if loading or no user
+  if (loading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by useEffect
+  }
+
+  const userRole = userProfile?.role || user?.user_metadata?.role || 'user';
 
   // Mock data
   const mockStats = [
@@ -269,17 +288,14 @@ const AdminDashboard = () => {
   const handleAuthAction = async (action) => {
     if (action === 'logout') {
       try {
-        // Clear demo user data
-        localStorage.removeItem('kerala_demo_user');
-        // Sign out from Supabase if using real auth
         await signOut();
-        navigate('/login-register');
+        navigate('/');
       } catch (error) {
         console.error('Logout error:', error);
-        // Fallback to clear demo user and navigate
-        localStorage.removeItem('kerala_demo_user');
         navigate('/login-register');
       }
+    } else {
+      navigate('/login-register');
     }
   };
 
@@ -595,9 +611,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header user={currentUser} userProfile={userProfile} onAuthAction={handleAuthAction} />
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       <RoleBasedNavigation 
-        user={currentUser} 
+        user={user} 
         isCollapsed={isNavCollapsed}
         onToggleCollapse={() => setIsNavCollapsed(!isNavCollapsed)}
       />

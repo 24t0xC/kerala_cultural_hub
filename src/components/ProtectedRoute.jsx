@@ -25,13 +25,12 @@ const ProtectedRoute = ({
 
   // Check if user is authenticated
   if (!user) {
-    const currentUrl = window.location.pathname;
-    return <Navigate to={`${redirectTo}?returnUrl=${encodeURIComponent(currentUrl)}`} replace />;
+    const currentUrl = window.location.pathname + window.location.search;
+    return <Navigate to={`/login-register?redirect=${encodeURIComponent(currentUrl)}`} replace />;
   }
 
-  // Get user role from profile or user metadata or localStorage (demo)
-  const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
-  const userRole = userProfile?.role || user?.user_metadata?.role || demoUser?.role || 'user';
+  // Get user role from profile or user metadata
+  const userRole = userProfile?.role || user?.user_metadata?.role || 'user';
 
   // Check role-based access
   if (requiredRole && userRole !== requiredRole) {

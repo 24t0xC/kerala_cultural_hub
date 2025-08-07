@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import Header from '../../components/ui/Header';
  import EventDetailsSidebar from'./components/EventDetailsSidebar';
  import TicketSelector from'./components/TicketSelector';
  import AttendeeForm from'./components/AttendeeForm';
@@ -16,7 +17,8 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function TicketPurchaseFlow() {
   const { eventId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const location = useLocation()
+  const { user, userProfile, signOut, loading: authLoading } = useAuth()
   
   const [event, setEvent] = useState(null)
   const [currentStep, setCurrentStep] = useState(1)
@@ -49,6 +51,14 @@ export default function TicketPurchaseFlow() {
       loadEvent()
     }
   }, [eventId])
+
+  // Check authentication
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Redirect to login with current path for return after login
+      navigate(`/login-register?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    }
+  }, [user, authLoading, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     if (user && currentStep === 2) {
@@ -172,7 +182,21 @@ export default function TicketPurchaseFlow() {
     setProcessing(false)
   }
 
-  if (loading) {
+  const handleAuthAction = async (action) => {
+    if (action === 'logout') {
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+        navigate('/login-register');
+      }
+    } else {
+      navigate('/login-register');
+    }
+  };
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -202,10 +226,15 @@ export default function TicketPurchaseFlow() {
     )
   }
 
+  if (!user) {
+    return null; // Will be redirected by useEffect
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
+      {/* Custom Header for Ticket Flow */}
+      <header className="bg-white shadow-sm border-b border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">

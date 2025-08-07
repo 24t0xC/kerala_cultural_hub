@@ -10,7 +10,7 @@ import Select from '../../components/ui/Select';
 
 const EventsListing = () => {
   const navigate = useNavigate()
-  const { user, userProfile } = useAuth()
+  const { user, userProfile, signOut } = useAuth()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -179,12 +179,17 @@ const EventsListing = () => {
     return eventDate > now
   }
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      localStorage.removeItem('kerala_demo_user');
-      navigate('/login');
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+        navigate('/login-register');
+      }
     } else {
-      navigate('/login');
+      navigate('/login-register');
     }
   };
 

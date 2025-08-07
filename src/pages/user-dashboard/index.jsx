@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import BottomTabNavigation from '../../components/ui/BottomTabNavigation';
@@ -14,23 +14,42 @@ import Icon from '../../components/AppIcon';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [showCalendarIntegration, setShowCalendarIntegration] = useState(false);
-  const { user: authUser, userProfile: authUserProfile, signOut } = useAuth();
-  
-  // Get current user from auth context or demo storage
-  const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
-  const currentUser = authUser || demoUser;
-  const currentUserProfile = authUserProfile || demoUser;
-  const userRole = currentUserProfile?.role || currentUser?.role || 'user';
+  const { user, userProfile, signOut, loading } = useAuth();
+
+  // Check authentication
+  useEffect(() => {
+    if (!loading && !user) {
+      // Redirect to login with current path for return after login
+      navigate(`/login-register?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    }
+  }, [user, loading, navigate, location.pathname, location.search]);
+
+  // Return early if loading or no user
+  if (loading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by useEffect
+  }
+
+  const userRole = userProfile?.role || user?.user_metadata?.role || 'user';
 
   const userData = {
-    name: currentUser?.name || "Priya Nair",
-    email: currentUser?.email || "priya.nair@gmail.com",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    location: "Kochi, Kerala",
-    memberSince: "Jan 2023",
-    interests: ["Kathakali", "Mohiniyattam", "Classical Music", "Folk Dance", "Temple Festivals"]
+    name: userProfile?.full_name || user?.user_metadata?.full_name || user?.email || "User",
+    email: user?.email || "",
+    avatar: userProfile?.profile_image_url || "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    location: userProfile?.location || "Kerala, India",
+    memberSince: user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : "Recently joined",
+    interests: userProfile?.interests || ["Kerala Culture", "Traditional Arts", "Festivals"]
   };
 
   // Mock events data
@@ -186,19 +205,14 @@ const UserDashboard = () => {
   const handleAuthAction = async (action) => {
     if (action === 'logout') {
       try {
-        // Clear demo user data
-        localStorage.removeItem('kerala_demo_user');
-        // Sign out from Supabase if using real auth
         await signOut();
-        navigate('/login');
+        navigate('/');
       } catch (error) {
         console.error('Logout error:', error);
-        // Fallback
-        localStorage.removeItem('kerala_demo_user');
-        navigate('/login');
+        navigate('/login-register');
       }
     } else {
-      navigate('/login');
+      navigate('/login-register');
     }
   };
 
@@ -327,8 +341,8 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={currentUser}
-        userProfile={currentUserProfile}
+        user={user}
+        userProfile={userProfile}
         onAuthAction={handleAuthAction}
       />
       <main className="pt-16 lg:pt-30 pb-24 lg:pb-8">
