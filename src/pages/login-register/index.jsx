@@ -108,7 +108,13 @@ const LoginRegisterPage = () => {
 
   const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      await signOut();
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    } else {
       navigate('/login-register');
     }
   };

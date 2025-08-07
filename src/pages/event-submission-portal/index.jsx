@@ -289,8 +289,8 @@ const EventSubmissionPortal = () => {
       try {
         // Use the signOut method from AuthContext
         await signOut();
-        // Navigate to login page after successful logout
-        navigate('/login');
+        // Navigate to home page after successful logout
+        navigate('/');
       } catch (error) {
         console.error('Logout failed:', error);
         // Navigate to login on error

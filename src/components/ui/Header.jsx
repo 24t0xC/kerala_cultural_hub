@@ -38,15 +38,8 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
   };
 
   const handleAuthAction = (action) => {
-    if (action === 'logout') {
-      // Clear demo user from localStorage
-      localStorage.removeItem('kerala_demo_user');
-      setDemoUser(null);
-      // Call parent logout handler for real auth
-      onAuthAction('logout');
-    } else {
-      navigate('/login');
-    }
+    // Call parent auth handler
+    onAuthAction(action);
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false);
   };
