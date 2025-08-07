@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import Button from '../../../components/ui/Button';
 import { useAuth } from '../../../contexts/AuthContext';
 import { eventService } from '../../../services/eventService';
-import { AppImage } from '../../../components/AppImage';
+import Image from '../../../components/AppImage';
 
 export default function EventCard({ event, onFavoriteToggle, isFavorite = false }) {
   const { user } = useAuth()

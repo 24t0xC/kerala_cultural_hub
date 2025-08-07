@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, BookOpen, Video, Music, Image } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/ui/Header';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
  import SearchBar from'./components/SearchBar';
@@ -9,6 +12,8 @@ import Button from '../../components/ui/Button';
 import { culturalContentService } from '../../services/culturalContentService';
 
 export default function CulturalHeritageRepository() {
+  const { user, userProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [content, setContent] = useState([])
   const [featuredContent, setFeaturedContent] = useState([])
   const [categories, setCategories] = useState([])
@@ -87,6 +92,20 @@ export default function CulturalHeritageRepository() {
     })
   }
 
+  const handleAuthAction = async (action) => {
+    if (action === 'logout') {
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+        navigate('/login-register');
+      }
+    } else {
+      navigate('/login-register');
+    }
+  };
+
   const hasActiveFilters = searchTerm || 
     Object.values(activeFilters).some(value => value !== '' && value !== 'created_at')
 
@@ -109,8 +128,9 @@ export default function CulturalHeritageRepository() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-amber-600 to-amber-700 text-white">
+      <section className="bg-gradient-to-r from-amber-600 to-amber-700 text-white pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">
