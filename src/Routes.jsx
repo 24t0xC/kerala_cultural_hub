@@ -2,7 +2,9 @@ import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
 
 // Enhanced pages from your version
 import AdminDashboard from './pages/admin-dashboard';
@@ -34,8 +36,16 @@ const Routes = () => {
         <Route path="/events" element={<EventsListing />} />
         <Route path="/events/:eventId" element={<EventDetails />} />
         <Route path="/event-discovery-dashboard" element={<EventDiscoveryDashboard />} />
-        <Route path="/event-submission-portal" element={<EventSubmissionPortal />} />
-        <Route path="/ticket-purchase-flow" element={<TicketPurchaseFlow />} />
+        <Route path="/event-submission-portal" element={
+          <ProtectedRoute allowedRoles={['artist', 'organizer', 'admin']}>
+            <EventSubmissionPortal />
+          </ProtectedRoute>
+        } />
+        <Route path="/ticket-purchase-flow" element={
+          <ProtectedRoute>
+            <TicketPurchaseFlow />
+          </ProtectedRoute>
+        } />
         
         {/* Cultural content routes */}
         <Route path="/culture" element={<CulturalRepository />} />
@@ -50,11 +60,24 @@ const Routes = () => {
         <Route path="/login" element={<LoginRegister />} />
         <Route path="/register" element={<LoginRegister />} />
         <Route path="/login-register" element={<LoginRegister />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
         
         {/* User dashboard and admin */}
-        <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/user-dashboard" element={
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin-dashboard" element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
         
         {/* Interactive features */}
         <Route path="/interactive-cultural-map" element={<InteractiveCulturalMap />} />

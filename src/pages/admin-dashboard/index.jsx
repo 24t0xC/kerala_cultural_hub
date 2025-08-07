@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
@@ -16,24 +17,23 @@ import ActivityFeed from './components/ActivityFeed';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user: authUser, userProfile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  const [user, setUser] = useState(null);
-  const [userProfile] = useState(null); // For consistency with header props
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Mock user data
+  // Get user role from auth context or demo user
+  const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
+  const currentUser = authUser || demoUser;
+  const userRole = userProfile?.role || authUser?.user_metadata?.role || demoUser?.role || 'user';
+
+  // Redirect if not admin (additional check even with ProtectedRoute)
   useEffect(() => {
-    const mockUser = {
-      id: 1,
-      name: "Admin User",
-      email: "admin@keralaculturalhub.com",
-      role: "admin",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-    };
-    setUser(mockUser);
-  }, []);
+    if (currentUser && userRole !== 'admin') {
+      navigate('/unauthorized');
+    }
+  }, [currentUser, userRole, navigate]);
 
   // Mock data
   const mockStats = [
@@ -266,10 +266,20 @@ const AdminDashboard = () => {
     { id: 'analytics', label: 'Analytics', icon: 'TrendingUp' }
   ];
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      setUser(null);
-      navigate('/login-register');
+      try {
+        // Clear demo user data
+        localStorage.removeItem('kerala_demo_user');
+        // Sign out from Supabase if using real auth
+        await signOut();
+        navigate('/login-register');
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Fallback to clear demo user and navigate
+        localStorage.removeItem('kerala_demo_user');
+        navigate('/login-register');
+      }
     }
   };
 
@@ -585,9 +595,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
+      <Header user={currentUser} userProfile={userProfile} onAuthAction={handleAuthAction} />
       <RoleBasedNavigation 
-        user={user} 
+        user={currentUser} 
         isCollapsed={isNavCollapsed}
         onToggleCollapse={() => setIsNavCollapsed(!isNavCollapsed)}
       />

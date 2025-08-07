@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import BottomTabNavigation from '../../components/ui/BottomTabNavigation';
 import UserProfileCard from './components/UserProfileCard';
@@ -15,29 +16,17 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [showCalendarIntegration, setShowCalendarIntegration] = useState(false);
-  const [user, setUser] = useState(null);
-  const [userProfile] = useState(null);
-
-  // Mock user data
-  useEffect(() => {
-    // Check for demo user first
-    const storedDemoUser = localStorage.getItem('kerala_demo_user');
-    if (storedDemoUser) {
-      setUser(JSON.parse(storedDemoUser));
-    } else {
-      // Fallback mock user
-      setUser({
-        id: 1,
-        name: "User",
-        email: "user@keralahub.com",
-        role: "user"
-      });
-    }
-  }, []);
+  const { user: authUser, userProfile: authUserProfile, signOut } = useAuth();
+  
+  // Get current user from auth context or demo storage
+  const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
+  const currentUser = authUser || demoUser;
+  const currentUserProfile = authUserProfile || demoUser;
+  const userRole = currentUserProfile?.role || currentUser?.role || 'user';
 
   const userData = {
-    name: user?.name || "Priya Nair",
-    email: user?.email || "priya.nair@gmail.com",
+    name: currentUser?.name || "Priya Nair",
+    email: currentUser?.email || "priya.nair@gmail.com",
     avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
     location: "Kochi, Kerala",
     memberSince: "Jan 2023",
@@ -194,11 +183,20 @@ const UserDashboard = () => {
     console.log(`Syncing ${events?.length} events with ${calendarType} calendar`);
   };
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      localStorage.removeItem('kerala_demo_user');
-      setUser(null);
-      navigate('/login');
+      try {
+        // Clear demo user data
+        localStorage.removeItem('kerala_demo_user');
+        // Sign out from Supabase if using real auth
+        await signOut();
+        navigate('/login');
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Fallback
+        localStorage.removeItem('kerala_demo_user');
+        navigate('/login');
+      }
     } else {
       navigate('/login');
     }
@@ -329,8 +327,8 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={user}
-        userProfile={userProfile}
+        user={currentUser}
+        userProfile={currentUserProfile}
         onAuthAction={handleAuthAction}
       />
       <main className="pt-16 lg:pt-30 pb-24 lg:pb-8">
@@ -341,8 +339,35 @@ const UserDashboard = () => {
               Welcome back, {userData?.name?.split(' ')?.[0]}! 👋
             </h1>
             <p className="text-muted-foreground font-caption">
-              Here's what's happening in your cultural journey
+              {userRole === 'admin' ? 'Manage your platform and oversee all cultural events' :
+               userRole === 'artist' ? 'Showcase your art and connect with audiences' :
+               userRole === 'organizer' ? 'Create memorable cultural experiences' :
+               "Here's what's happening in your cultural journey"}
             </p>
+            {userRole !== 'user' && (
+              <div className="mt-4 flex gap-3">
+                {(userRole === 'artist' || userRole === 'organizer') && (
+                  <Button
+                    variant="default"
+                    iconName="Plus"
+                    iconPosition="left"
+                    onClick={() => navigate('/event-submission-portal')}
+                  >
+                    Create Event
+                  </Button>
+                )}
+                {userRole === 'admin' && (
+                  <Button
+                    variant="default"
+                    iconName="Settings"
+                    iconPosition="left"
+                    onClick={() => navigate('/admin-dashboard')}
+                  >
+                    Admin Dashboard
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stats Cards */}

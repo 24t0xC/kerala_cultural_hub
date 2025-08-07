@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
+import Icon from '../../../components/AppIcon';
+import { cn } from '../../../utils/cn';
 
 
 const RegisterForm = ({ onSubmit, isLoading }) => {
@@ -14,6 +16,8 @@ const RegisterForm = ({ onSubmit, isLoading }) => {
   });
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const userTypeOptions = [
     { value: 'enthusiast', label: 'Cultural Enthusiast', description: 'Discover and attend cultural events' },
@@ -66,6 +70,14 @@ const RegisterForm = ({ onSubmit, isLoading }) => {
     if (errors?.userType) {
       setErrors(prev => ({ ...prev, userType: '' }));
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const validateForm = () => {
@@ -135,17 +147,55 @@ const RegisterForm = ({ onSubmit, isLoading }) => {
         disabled={isLoading}
       />
       <div>
-        <Input
-          label="Password"
-          type="password"
-          name="password"
-          placeholder="Create a strong password"
-          value={formData?.password}
-          onChange={handleChange}
-          error={errors?.password}
-          required
-          disabled={isLoading}
-        />
+        {/* Custom Password Input with Show/Hide Toggle */}
+        <div className="space-y-2">
+          <label
+            htmlFor="password"
+            className={cn(
+              "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+              errors?.password ? "text-destructive" : "text-foreground"
+            )}
+          >
+            Password
+            <span className="text-destructive ml-1">*</span>
+          </label>
+
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a strong password"
+              value={formData?.password}
+              onChange={handleChange}
+              disabled={isLoading}
+              className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                errors?.password && "border-destructive focus-visible:ring-destructive"
+              )}
+            />
+            
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              disabled={isLoading}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              <Icon 
+                name={showPassword ? "EyeOff" : "Eye"} 
+                size={16}
+                className="transition-colors"
+              />
+            </button>
+          </div>
+
+          {errors?.password && (
+            <p className="text-sm text-destructive">
+              {errors?.password}
+            </p>
+          )}
+        </div>
         
         {formData?.password && (
           <div className="mt-2">
@@ -168,17 +218,55 @@ const RegisterForm = ({ onSubmit, isLoading }) => {
           </div>
         )}
       </div>
-      <Input
-        label="Confirm Password"
-        type="password"
-        name="confirmPassword"
-        placeholder="Confirm your password"
-        value={formData?.confirmPassword}
-        onChange={handleChange}
-        error={errors?.confirmPassword}
-        required
-        disabled={isLoading}
-      />
+      {/* Custom Confirm Password Input with Show/Hide Toggle */}
+      <div className="space-y-2">
+        <label
+          htmlFor="confirmPassword"
+          className={cn(
+            "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+            errors?.confirmPassword ? "text-destructive" : "text-foreground"
+          )}
+        >
+          Confirm Password
+          <span className="text-destructive ml-1">*</span>
+        </label>
+
+        <div className="relative">
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm your password"
+            value={formData?.confirmPassword}
+            onChange={handleChange}
+            disabled={isLoading}
+            className={cn(
+              "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              errors?.confirmPassword && "border-destructive focus-visible:ring-destructive"
+            )}
+          />
+          
+          <button
+            type="button"
+            onClick={toggleConfirmPasswordVisibility}
+            disabled={isLoading}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+          >
+            <Icon 
+              name={showConfirmPassword ? "EyeOff" : "Eye"} 
+              size={16}
+              className="transition-colors"
+            />
+          </button>
+        </div>
+
+        {errors?.confirmPassword && (
+          <p className="text-sm text-destructive">
+            {errors?.confirmPassword}
+          </p>
+        )}
+      </div>
       <Select
         label="I am a..."
         placeholder="Select your role"

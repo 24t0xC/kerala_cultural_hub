@@ -1,150 +1,207 @@
-# Event Submission Debug Guide
+# 🐛 Event Submission Debug Guide
 
-## ✅ **ISSUE FIXED: Enhanced Error Handling**
+## ✅ **FIXED**: "Cannot access 'eventData' before initialization" Error
 
-The event submission now provides **detailed error messages** instead of generic "failed to submit" messages.
+### 🔧 **Root Cause**
 
----
+The error was caused by a premature `console.log('Full event data being submitted:', eventData);` statement on line 87, which tried to access `eventData` before it was declared on line 108.
 
-## 🚀 **Latest Deployment**
-
-**Live App**: https://kerala-cultural-8ew235rcn-24t0xcs-projects.vercel.app
-
----
-
-## 🔧 **Enhanced Error Handling Features**
-
-### **1. Specific Error Messages**
-
-Instead of generic errors, users now see specific reasons:
-
-- ❌ **"Event title is required."** (if title is empty)
-- ❌ **"Event description is required."** (if description is empty)
-- ❌ **"Venue name is required."** (if venue name is empty)
-- ❌ **"User not authenticated. Please log in again."** (if user ID missing)
-- ❌ **"User profile not found for organizer ID: [ID]. Please ensure you are logged in with a valid account."** (if user profile doesn't exist in database)
-
-### **2. Technical Details for Support**
-
-Each error now includes:
-
-- **Error Code** (database error codes)
-- **Details** (specific constraint violations)
-- **Hint** (database suggestions)
-- **Raw Error** (original error message)
-
-### **3. Better UI for Errors**
-
-- ✅ Larger, more prominent error display
-- ✅ Expandable technical details section
-- ✅ "Try Again" and "Get Help" buttons
-- ✅ Console logging for debugging
-
----
-
-## 🧪 **How to Test Error Handling**
-
-### **Test 1: Missing Required Fields**
-
-1. Go to `/event-submission-portal`
-2. Try to submit without filling required fields
-3. **Expected**: Specific error like "Event title is required."
-
-### **Test 2: Authentication Issues**
-
-1. Clear localStorage: `localStorage.clear()` in console
-2. Try to submit event
-3. **Expected**: "User not authenticated. Please log in again."
-
-### **Test 3: Database Connection Issues**
-
-1. If database is down or misconfigured
-2. **Expected**: "Database connection issue. Please try again in a moment."
-
-### **Test 4: User Profile Issues**
-
-1. Submit with invalid user ID
-2. **Expected**: "User profile not found" with specific ID
-
----
-
-## 🛠️ **Debugging Tools Added**
-
-### **Console Logging**
-
-All submissions now log detailed information:
+### 🔧 **Solution Applied**
 
 ```javascript
-console.log("Submitting event data:", eventData);
-console.log("User data:", user);
-console.log("Event created successfully:", data);
-console.error("Full error object:", { message, code, details, hint });
+// BEFORE (BROKEN - Line 87)
+console.log('Full event data being submitted:', eventData); // ❌ eventData not yet declared
+
+// Map form categories to database enum values
+const categoryMapping = { ... };
+
+// Transform form data to match database schema
+const eventData = { ... }; // ✅ eventData declared here (Line 108)
+
+// AFTER (FIXED)
+// Removed the premature console.log and added proper logging after declaration
+const eventData = { ... };
+console.log('Full event data being submitted:', eventData); // ✅ Now properly placed
 ```
 
-### **Technical Details Panel**
+## 🧪 **Testing Event Submission**
 
-Click "Technical Details (for support)" to see:
+### **1. Quick Test Steps**
 
-- Database error codes
-- Constraint violation details
-- Supabase error hints
-- Raw error messages
+1. **Login with any authorized role**:
 
-### **Get Help Button**
+   ```
+   Artist: artist@keralahub.com / artist123
+   Organizer: organizer@keralahub.com / organizer123
+   Admin: admin@keralahub.com / admin123
+   ```
 
-Logs full debug info to console and shows instructions for getting support.
+2. **Navigate to Event Submission**: http://localhost:3000/event-submission-portal
 
----
+3. **Fill Minimal Required Fields**:
 
-## 📋 **Common Error Scenarios & Solutions**
+   - **Step 1 - Basic Info**:
 
-| Error Message               | Cause                | Solution                   |
-| --------------------------- | -------------------- | -------------------------- |
-| "Event title is required"   | Empty title field    | Fill in the event title    |
-| "User not authenticated"    | No user logged in    | Login again                |
-| "User profile not found"    | User not in database | Ensure user account exists |
-| "Database connection issue" | Supabase down        | Wait and retry             |
-| "Permission denied"         | RLS policy blocking  | Check user permissions     |
+     - Title: `Test Event`
+     - Description: `Test event description`
+     - Category: `Classical Dance`
+     - Start Date: Any future date
+     - Start Time: `10:00`
 
----
+   - **Step 2 - Venue**:
 
-## 🎯 **Key Improvements Made**
+     - Venue Name: `Test Venue`
+     - Address: `Test Address`
+     - City: `Kochi`
+     - Capacity: `100`
 
-1. **Comprehensive Validation**: All required fields checked with specific messages
-2. **User Profile Verification**: Ensures user exists before creating event
-3. **Database Error Mapping**: Translates technical errors to user-friendly messages
-4. **Debug Information**: Extensive logging for troubleshooting
-5. **Better UX**: Clear error display with actionable next steps
+   - **Step 3 - Media**: (Optional - can skip)
 
----
+     - Cultural Documentation: `Test cultural significance`
 
-## 🔄 **Error Flow**
+   - **Step 4 - Ticketing**:
+     - Keep default "Free Event" setting
 
+4. **Submit Event**: Click "Submit Event" button
+
+### **2. Expected Flow**
+
+1. **Loading State**: Button shows loading spinner
+2. **Console Logs**: Check browser console for debug information:
+   ```javascript
+   // You should see these logs:
+   Event submission debug info: { currentUser: {...}, userRole: "artist", userId: "..." }
+   Full event data being submitted: { title: "Test Event", ... }
+   Event data validation: { hasTitle: true, hasDescription: true, ... }
+   ```
+3. **Success State**: Success message with submission ID
+4. **Auto Redirect**: Redirects to events page after 3 seconds
+
+### **3. Debug Console Commands**
+
+Open browser console (F12) and run:
+
+```javascript
+// Check current user
+console.log(
+  "Current User:",
+  JSON.parse(localStorage.getItem("kerala_demo_user"))
+);
+
+// Check form data being submitted (run before submission)
+window.addEventListener("beforeunload", () => {
+  console.log("Form data at submission:", window.formData);
+});
 ```
-User Submits Event
-        ↓
-Client-side Validation (required fields)
-        ↓
-User Authentication Check
-        ↓
-User Profile Verification (database)
-        ↓
-Event Creation (database)
-        ↓
-Success ✅ or Specific Error ❌
+
+## 🔍 **Common Issues & Solutions**
+
+### **Issue 1: "User not defined" Error**
+
+**Cause**: User not properly authenticated
+**Solution**:
+
+```javascript
+// Check if user is logged in
+const demoUser = JSON.parse(localStorage.getItem("kerala_demo_user"));
+console.log("Demo user:", demoUser);
+
+// If no user, clear and re-login
+localStorage.removeItem("kerala_demo_user");
+// Then login again
 ```
 
----
+### **Issue 2: "Permission denied" Error**
 
-## 📞 **Support Information**
+**Cause**: User role not authorized
+**Solution**: Verify user role in console:
 
-If users still experience issues:
+```javascript
+const user = JSON.parse(localStorage.getItem("kerala_demo_user"));
+console.log("User role:", user.role);
+// Should be 'admin', 'artist', or 'organizer'
+```
 
-1. Check browser console (F12) for detailed logs
-2. Use "Technical Details" section for error codes
-3. Click "Get Help" button for debug information
-4. Report specific error messages (not generic "failed to submit")
+### **Issue 3: Form Validation Errors**
 
----
+**Common missing fields**:
 
-The event submission error handling is now **production-ready** with comprehensive error reporting! 🎉
+- ❌ Empty title
+- ❌ Empty description
+- ❌ Empty venue name
+- ❌ Empty address
+- ❌ Invalid date
+
+**Check validation in console**:
+
+```javascript
+// The validation object shows what's missing:
+Event data validation: {
+  hasTitle: false,        // ❌ Title is empty
+  hasDescription: true,   // ✅ Description is filled
+  hasVenueName: false,    // ❌ Venue name is empty
+  // ...
+}
+```
+
+## 📝 **Test Verification Checklist**
+
+### ✅ **Form Data Flow**
+
+- [ ] SubmissionWizard captures form data correctly
+- [ ] handleSubmit calls onSubmit(formData)
+- [ ] Parent component receives formData
+- [ ] eventData object is properly constructed
+- [ ] All required fields are validated
+
+### ✅ **User Authentication**
+
+- [ ] Demo user is stored in localStorage
+- [ ] currentUser object has id/email
+- [ ] userRole is correctly detected
+- [ ] userId is properly generated for demo users
+
+### ✅ **Database Operation**
+
+- [ ] eventService.createEvent is called
+- [ ] If database fails, fallback demo mode works
+- [ ] Success status is set correctly
+- [ ] Event ID is generated
+
+### ✅ **UI Feedback**
+
+- [ ] Loading spinner shows during submission
+- [ ] Success message displays with submission ID
+- [ ] Auto-redirect to events page works
+- [ ] Error messages are user-friendly
+
+## 🎯 **Success Indicators**
+
+When event submission works correctly, you should see:
+
+1. **Console Logs** (in order):
+
+   ```
+   Event submission debug info: {...}
+   Full event data being submitted: {...}
+   Event data validation: {...}
+   Submitting event data: {...}
+   Using demo mode fallback: {...} (if database not connected)
+   ```
+
+2. **UI Changes**:
+
+   - Submit button shows loading spinner
+   - Page shows success message
+   - Automatic redirect after 3 seconds
+
+3. **No Errors**:
+   - No "Cannot access before initialization" errors
+   - No "user not defined" errors
+   - No validation errors for properly filled forms
+
+## 🚀 **Ready to Test!**
+
+The event submission system is now fixed and ready for comprehensive testing with all user roles.
+
+**Test URL**: http://localhost:3000/event-submission-portal

@@ -5,49 +5,76 @@ import BottomTabNavigation from '../../components/ui/BottomTabNavigation';
 import SubmissionWizard from './components/SubmissionWizard';
 import SubmissionGuidelines from './components/SubmissionGuidelines';
 import DraftManager from './components/DraftManager';
+import TestEventSubmission from '../../components/TestEventSubmission';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EventSubmissionPortal = () => {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState(null);
-  const [userProfile] = useState(null);
-
-  // Mock user for demo - in real app, this would come from auth context
-  useEffect(() => {
-    // Check for demo user first
-    const storedDemoUser = localStorage.getItem('kerala_demo_user');
-    if (storedDemoUser) {
-      setUser(JSON.parse(storedDemoUser));
-    } else {
-      // Fallback mock user for direct access
-      setUser({
-        id: 2,
-        name: "Event Organizer",
-        email: "organizer@keralahub.com",
-        role: "organizer"
-      });
-    }
-  }, []);
-
-  const userRole = user?.role || 'organizer';
+  
+  // Get user from AuthContext
+  const { user: authUser, userProfile: authUserProfile, signOut } = useAuth();
+  
+  // Get current user from auth context
+  const currentUser = authUser;
+  const currentUserProfile = authUserProfile;
+  
+  // Get user role from profile
+  const userRole = currentUserProfile?.role || currentUser?.user_metadata?.role || 'user';
 
   useEffect(() => {
-    // Check if user has permission to submit events
-    if (userRole === 'visitor') {
-      // Redirect to registration or upgrade account
-      navigate('/user-dashboard');
+    // Check if user is authenticated
+    if (!currentUser?.id) {
+      // No user logged in - redirect to login
+      navigate('/login');
+      return;
     }
-  }, [userRole, navigate]);
+    
+    if (!['artist', 'organizer', 'admin'].includes(userRole)) {
+      // User doesn't have permission - redirect to unauthorized
+      navigate('/unauthorized');
+      return;
+    }
+  }, [currentUser, userRole, navigate]);
 
   const handleSubmitEvent = async (formData) => {
     setIsSubmitting(true);
     try {
+      // Validate user authentication first
+      if (!currentUser?.id) {
+        throw new Error('You must be logged in to submit events. Please log in and try again.');
+      }
+
+      // Validate user role
+      if (!['artist', 'organizer', 'admin'].includes(userRole)) {
+        throw new Error('You do not have permission to submit events. Please contact support to upgrade your account.');
+      }
+
       // Import event service
       const { eventService } = await import('../../services/eventService');
+      
+      // Get user ID
+      const userId = currentUser?.id;
+      
+      console.log('Event submission debug info:', {
+        currentUser: {
+          id: currentUser?.id,
+          email: currentUser?.email,
+          name: currentUser?.name,
+          role: currentUser?.role
+        },
+        userRole,
+        userId,
+        formDataKeys: Object.keys(formData || {})
+      });
+      
+      if (!userId) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
       
       // Map form categories to database enum values
       const categoryMapping = {
@@ -103,15 +130,27 @@ const EventSubmissionPortal = () => {
         cultural_significance: formData.media?.culturalDocumentation,
         requirements: formData.basicInfo?.ageRestriction ? `Age requirement: ${formData.basicInfo.ageRestriction}` : null,
         contact_info: {
-          organizer: user?.name || user?.full_name || user?.email,
-          email: user?.email,
-          phone: user?.phone
+          organizer: currentUser?.name || currentUser?.full_name || currentUser?.email,
+          email: currentUser?.email,
+          phone: currentUser?.phone
         },
         
         // Admin fields
-        organizer_id: user?.id || user?.user_id, // Handle different user object structures
+        organizer_id: userId, // Use the generated user ID
         status: 'pending_approval' // Use correct enum value
       };
+      
+      // Log the full event data being submitted
+      console.log('Full event data being submitted:', eventData);
+      console.log('Event data validation:', {
+        hasTitle: !!eventData.title?.trim(),
+        hasDescription: !!eventData.description?.trim(),
+        hasVenueName: !!eventData.venue_name?.trim(),
+        hasAddress: !!eventData.address?.trim(),
+        hasStartDate: !!eventData.start_date,
+        hasCategory: !!eventData.category,
+        hasOrganizerId: !!eventData.organizer_id
+      });
       
       // Validate required fields
       if (!eventData.title?.trim()) {
@@ -132,10 +171,6 @@ const EventSubmissionPortal = () => {
       if (!eventData.category) {
         throw new Error('Event category is required.');
       }
-
-      if (!user?.id && !user?.user_id) {
-        throw new Error('User not authenticated. Please log in again.');
-      }
       
       // Additional validation
       if (eventData.total_tickets && eventData.total_tickets <= 0) {
@@ -147,15 +182,15 @@ const EventSubmissionPortal = () => {
       }
 
       console.log('Submitting event data:', eventData);
-      console.log('User data:', user);
+      console.log('User data:', currentUser);
       
-      // Actually save to database
+      // Save event to database
       const savedEvent = await eventService.createEvent(eventData);
       console.log('Event saved successfully:', savedEvent);
       
       setSubmissionStatus({
         success: true,
-        submissionId: savedEvent?.id || `EVT_${Date.now()}`,
+        submissionId: savedEvent?.id,
         message: 'Your event has been submitted successfully and is under review. You can view it in the events listing.',
         estimatedApproval: '3-5 business days'
       });
@@ -249,11 +284,18 @@ const EventSubmissionPortal = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAuthAction = (action) => {
+  const handleAuthAction = async (action) => {
     if (action === 'logout') {
-      localStorage.removeItem('kerala_demo_user');
-      setUser(null);
-      navigate('/login');
+      try {
+        // Use the signOut method from AuthContext
+        await signOut();
+        // Navigate to login page after successful logout
+        navigate('/login');
+      } catch (error) {
+        console.error('Logout failed:', error);
+        // Navigate to login on error
+        navigate('/login');
+      }
     } else {
       navigate('/login');
     }
@@ -263,8 +305,8 @@ const EventSubmissionPortal = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header 
-          user={user}
-          userProfile={userProfile}
+          user={currentUser}
+          userProfile={currentUserProfile}
           onAuthAction={handleAuthAction}
         />
         <BottomTabNavigation />
@@ -345,6 +387,9 @@ const EventSubmissionPortal = () => {
         title="Event Submission Portal"
         showSearch={false}
         showUserMenu={true}
+        user={currentUser}
+        userProfile={currentUserProfile}
+        onAuthAction={handleAuthAction}
       />
       <BottomTabNavigation />
       <div className="pt-16 lg:pt-30 pb-20 lg:pb-6">
@@ -410,7 +455,7 @@ const EventSubmissionPortal = () => {
                         <Button 
                           onClick={() => {
                             console.log('Full submission status:', submissionStatus);
-                            console.log('Current user:', user);
+                            console.log('Current user:', currentUser);
                             alert('Debug information logged to console. Press F12 to view, or contact support with the technical details above.');
                           }}
                           size="sm"

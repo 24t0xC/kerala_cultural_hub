@@ -58,8 +58,18 @@
   },
   "scripts": {
     "start": "vite",
+    "dev": "vite", 
     "build": "vite build --sourcemap",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "preview": "vite preview",
+    "check-env": "node scripts/check-environment.js",
+    "deploy:check": "npm run check-env && npm run build",
+    "deploy:full": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
+    "verify:deployment": "node scripts/verify-deployment.js",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:seed": "supabase db reset && supabase db push",
+    "remove:demo": "node scripts/remove-demo-functionality.js"
   },
   "eslintConfig": {
     "extends": [

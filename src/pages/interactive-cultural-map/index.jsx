@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Map, List, Filter, Search, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import GoogleMap from '../../components/GoogleMap';
 import MapFilters from'./components/MapFilters';
@@ -8,10 +11,10 @@ import EventListView from'./components/EventListView';
 import LocationSearch from'./components/LocationSearch';
 import ActiveFiltersChips from'./components/ActiveFiltersChips';
 import { eventService } from '../../services/eventService';
-import { useAuth } from '../../contexts/AuthContext';
 
 export default function InteractiveCulturalMap() {
-  const { user } = useAuth()
+  const { user, userProfile, signOut } = useAuth()
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -209,10 +212,24 @@ export default function InteractiveCulturalMap() {
     'Alappuzha', 'Kottayam', 'Kannur', 'Palakkad', 'Malappuram'
   ]
 
+  const handleAuthAction = async (action) => {
+    if (action === 'logout') {
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    } else {
+      navigate('/login');
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 z-10">
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
+      {/* Page Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 z-10 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>

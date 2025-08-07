@@ -26,10 +26,14 @@ const LoginRegisterPage = () => {
   };
 
   useEffect(() => {
-    // Check if user is already logged in via Supabase
-    if (user && !loading) {
+    // Check if user is already logged in via Supabase or demo mode
+    const demoUser = JSON.parse(localStorage.getItem('kerala_demo_user') || '{}');
+    
+    if ((user && !loading) || demoUser?.id) {
       // Redirect based on user role
-      if (userProfile?.role === 'admin') {
+      const userRole = userProfile?.role || user?.user_metadata?.role || demoUser?.role || 'user';
+      
+      if (userRole === 'admin') {
         navigate('/admin-dashboard');
       } else {
         navigate('/events');

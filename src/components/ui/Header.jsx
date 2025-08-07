@@ -55,7 +55,7 @@ const Header = ({ user = null, userProfile = null, onAuthAction = () => {} }) =>
       // Call parent logout handler for real auth
       onAuthAction('logout');
     } else {
-      navigate('/login-register');
+      navigate('/login');
     }
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false);

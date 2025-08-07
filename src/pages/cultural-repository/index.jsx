@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Eye, User, Calendar, BookOpen, Film, Music, Palette } from 'lucide-react';
 import { culturalContentService } from '../../services/culturalContentService';
+import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -10,6 +12,7 @@ import Icon from '../../components/AppIcon';
 
 const CulturalRepository = () => {
   const navigate = useNavigate()
+  const { user, userProfile, signOut } = useAuth()
   const [content, setContent] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -107,10 +110,24 @@ const CulturalRepository = () => {
     return <Icon className="w-5 h-5" />
   }
 
+  const handleAuthAction = async (action) => {
+    if (action === 'logout') {
+      try {
+        await signOut();
+        navigate('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    } else {
+      navigate('/login');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header user={user} userProfile={userProfile} onAuthAction={handleAuthAction} />
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white pt-16">
         <div className="container mx-auto px-4 py-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Kerala's Cultural Heritage
